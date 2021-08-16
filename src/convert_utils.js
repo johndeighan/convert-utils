@@ -37,7 +37,8 @@ import {
 
 import {
   slurp,
-  pathTo
+  pathTo,
+  findFile
 } from '@jdeighan/coffee-utils/fs';
 
 import {
@@ -219,21 +220,16 @@ hExtToEnvVar = {
 
 // ---------------------------------------------------------------------------
 export var getFileContents = function(fname, convert = false) {
-  var base, contents, dir, envvar, ext, fullpath, root;
+  var contents, ext, fullpath;
   if (unitTesting) {
     return `Contents of ${fname}`;
   }
-  ({root, dir, base, ext} = parse_fname(fname.trim()));
-  assert(!root && !dir, "getFileContents():" + ` root='${root}', dir='${dir}'` + " - full path not allowed");
-  envvar = hExtToEnvVar[ext];
-  assert(envvar, `getFileContents() doesn't work for ext '${ext}'`);
-  dir = process.env[envvar];
-  assert(dir, `No env var set for file extension '${ext}'`);
-  fullpath = pathTo(base, dir); // guarantees that file exists
+  fullpath = findFile(fname);
   contents = slurp(fullpath);
   if (!convert) {
     return contents;
   }
+  ({ext} = parse_fname(fullpath));
   switch (ext) {
     case '.md':
       return markdownify(contents);

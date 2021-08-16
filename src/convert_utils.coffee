@@ -21,7 +21,7 @@ import {
 	indentedBlock,
 	undentedBlock,
 	} from '@jdeighan/coffee-utils/indent'
-import {slurp, pathTo} from '@jdeighan/coffee-utils/fs'
+import {slurp, pathTo, findFile} from '@jdeighan/coffee-utils/fs'
 import {setDebugging} from '@jdeighan/coffee-utils/debug'
 import {svelteHtmlEsc} from '@jdeighan/coffee-utils/svelte'
 import {StringInput} from '@jdeighan/string-input'
@@ -187,18 +187,11 @@ export getFileContents = (fname, convert=false) ->
 	if unitTesting
 		return "Contents of #{fname}"
 
-	{root, dir, base, ext} = parse_fname(fname.trim())
-	assert not root && not dir, "getFileContents():" \
-		+ " root='#{root}', dir='#{dir}'" \
-		+ " - full path not allowed"
-	envvar = hExtToEnvVar[ext]
-	assert envvar, "getFileContents() doesn't work for ext '#{ext}'"
-	dir = process.env[envvar]
-	assert dir, "No env var set for file extension '#{ext}'"
-	fullpath = pathTo(base, dir)   # guarantees that file exists
+	fullpath = findFile(fname)
 	contents = slurp(fullpath)
 	if not convert
 		return contents
+	{ext} = parse_fname(fullpath)
 	switch ext
 		when '.md'
 			return markdownify(contents)
