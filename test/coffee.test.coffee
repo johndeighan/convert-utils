@@ -1,0 +1,63 @@
+# coffee.test.coffee
+
+import {AvaTester} from '@jdeighan/ava-tester'
+import {
+	say, undef, setUnitTesting,
+	} from '@jdeighan/coffee-utils'
+import {loadEnvFrom} from '@jdeighan/env'
+import {mydir, mkpath} from '@jdeighan/coffee-utils/fs'
+import {
+	brewCoffee, brewExpr,
+	} from '@jdeighan/convert-utils'
+
+loadEnvFrom(mydir(`import.meta.url`), {
+	rootName: 'dir_root',
+	})
+simple = new AvaTester()
+setUnitTesting(true)
+
+# ---------------------------------------------------------------------------
+
+class CoffeeTester extends AvaTester
+
+	transformValue: (text) ->
+
+		return brewCoffee(text)
+
+tester = new CoffeeTester()
+
+# ---------------------------------------------------------------------------
+# NOTE: When not unit testing, there will be a semicolon after 1000
+
+tester.equal 32, """
+		x <== a + 1000
+		""", """
+		`$: x = a + 1000`
+		"""
+
+tester.equal 38, """
+		# --- a comment line
+
+		x <== a + 1000
+		""", """
+		`$: x = a + 1000`
+		"""
+
+# ---------------------------------------------------------------------------
+
+setUnitTesting(false)
+
+tester.equal 50, """
+		x = 23
+		""", """
+		var x;
+		x = 23;
+		"""
+
+tester.equal 57, """
+		# --- a comment
+
+		x <== a + 1000
+		""", """
+		$: x = a + 1000;;
+		"""

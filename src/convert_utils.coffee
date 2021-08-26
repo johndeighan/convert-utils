@@ -7,22 +7,14 @@ import marked from 'marked'
 import sass from 'sass'
 
 import {
-	say,
-	undef,
-	pass,
-	error,
-	isEmpty,
-	taml,
-	unitTesting,
+	say, undef, pass, error, isEmpty, isComment,
+	unitTesting, escapeStr, taml,
 	} from '@jdeighan/coffee-utils'
 import {
-	splitLine,
-	indentedStr,
-	indentedBlock,
-	undentedBlock,
+	splitLine, indentedStr, indentedBlock, undentedBlock,
 	} from '@jdeighan/coffee-utils/indent'
 import {slurp, pathTo, findFile} from '@jdeighan/coffee-utils/fs'
-import {setDebugging} from '@jdeighan/coffee-utils/debug'
+import {debug} from '@jdeighan/coffee-utils/debug'
 import {svelteHtmlEsc} from '@jdeighan/coffee-utils/svelte'
 import {StringInput} from '@jdeighan/string-input'
 
@@ -50,9 +42,10 @@ import {StringInput} from '@jdeighan/string-input'
 			}
 ###
 # ---------------------------------------------------------------------------
-# --- export to allow unit testing
 
-export class CoffeeMapper extends StringInput
+class CoffeeMapper extends StringInput
+	# - removes blank lines and comments
+	# - converts <var> <== <expr> to `$: <var> = <expr>
 
 	mapLine: (orgLine) ->
 
@@ -64,7 +57,7 @@ export class CoffeeMapper extends StringInput
 					([A-Za-z][A-Za-z0-9_]*)   # variable name
 					\s*
 					)?
-				\<\=\=
+				\< \= \=
 				\s*
 				(.*)
 				$///)
@@ -121,11 +114,11 @@ export brewExpr = (expr) ->
 
 export brewCoffee = (text) ->
 
+	oInput = new CoffeeMapper(text)
+	newtext = oInput.getAllText()
 	if unitTesting
-		return text
+		return newtext
 	try
-		oInput = new CoffeeMapper(text)
-		newtext = oInput.getAllText()
 		script = CoffeeScript.compile(newtext, {bare: true})
 	catch err
 		say "CoffeeScript error!"
@@ -138,22 +131,28 @@ export brewCoffee = (text) ->
 
 export markdownify = (text) ->
 
+	debug "enter markdownify('#{escapeStr(text)}')"
 	if unitTesting
+		say "return original text"
 		return text
-	html = marked(undentedBlock(text), {
+	text = undentedBlock(text)
+	html = marked(text, {
 			grm: true,
 			headerIds: false,
 			})
-	return svelteHtmlEsc(html)
+	debug "marked returned '#{escapeStr(html)}'"
+	result = svelteHtmlEsc(html)
+	debug "return '#{escapeStr(result)}'"
+	return result
 
 # ---------------------------------------------------------------------------
-# --- export to allow unit testing
 
-export class SassMapper extends StringInput
+class SassMapper extends StringInput
+	# --- only removes comments
 
 	mapLine: (line) ->
 
-		if line.match(/^\s*$/) || line.match(/^\s*#\s/)
+		if isComment(line)
 			return undef
 		return line
 
@@ -161,10 +160,10 @@ export class SassMapper extends StringInput
 
 export sassify = (text) ->
 
-	if unitTesting
-		return text
 	oInput = new SassMapper(text)
 	newtext = oInput.getAllText()
+	if unitTesting
+		return newtext
 	result = sass.renderSync({
 			data: newtext,
 			indentedSyntax: true,
@@ -175,9 +174,9 @@ export sassify = (text) ->
 # ---------------------------------------------------------------------------
 
 hExtToEnvVar = {
-	'.md':   'DIR_MARKDOWN',
-	'.taml': 'DIR_DATA',
-	'.txt':  'DIR_DATA',
+	'.md':   'dir_markdown',
+	'.taml': 'dir_data',
+	'.txt':  'dir_data',
 	}
 
 # ---------------------------------------------------------------------------
