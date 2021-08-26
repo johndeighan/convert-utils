@@ -42,8 +42,9 @@ import {StringInput} from '@jdeighan/string-input'
 			}
 ###
 # ---------------------------------------------------------------------------
+# --- export to allow unit testing
 
-class CoffeeMapper extends StringInput
+export class CoffeeMapper extends StringInput
 	# - removes blank lines and comments
 	# - converts <var> <== <expr> to `$: <var> = <expr>
 
