@@ -134,7 +134,7 @@ export markdownify = (text) ->
 
 	debug "enter markdownify('#{escapeStr(text)}')"
 	if unitTesting
-		say "return original text"
+		debug "return original text"
 		return text
 	text = undentedBlock(text)
 	html = marked(text, {
