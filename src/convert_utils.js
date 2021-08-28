@@ -32,9 +32,8 @@ import {
 
 import {
   splitLine,
-  indentedStr,
-  indentedBlock,
-  undentedBlock
+  indented,
+  undented
 } from '@jdeighan/coffee-utils/indent';
 
 import {
@@ -100,9 +99,9 @@ export var CoffeeMapper = class CoffeeMapper extends StringInput {
           error(err.message);
         }
         if (varname) {
-          result = indentedStr(`\`\$\: ${varname} = ${jsExpr}\``, level);
+          result = indented(`\`\$\: ${varname} = ${jsExpr}\``, level);
         } else {
-          result = indentedStr(`\`\$\: ${jsExpr}\``, level);
+          result = indented(`\`\$\: ${jsExpr}\``, level);
         }
       } else {
         if (varname) {
@@ -117,11 +116,11 @@ export var CoffeeMapper = class CoffeeMapper extends StringInput {
         }
         result = `\`\`\`
 \$\: {
-${indentedBlock(jsCode, 1)}
-${indentedStr('}', 1)}
+${indented(jsCode, 1)}
+${indented('}', 1)}
 \`\`\``;
       }
-      return indentedBlock(result, level);
+      return indented(result, level);
     } else {
       return orgLine;
     }
@@ -139,6 +138,7 @@ export var brewExpr = function(expr) {
     newexpr = CoffeeScript.compile(expr, {
       bare: true
     }).trim();
+    // --- Remove any trailing semicolon
     pos = newexpr.length - 1;
     if (newexpr.substr(pos, 1) === ';') {
       newexpr = newexpr.substr(0, pos);
@@ -182,7 +182,7 @@ export var markdownify = function(text) {
     debug("return original text");
     return text;
   }
-  text = undentedBlock(text);
+  text = undented(text);
   html = marked(text, {
     grm: true,
     headerIds: false
